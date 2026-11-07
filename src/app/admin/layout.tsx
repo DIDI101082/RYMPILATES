@@ -1,18 +1,19 @@
-import { Sidebar } from "@/components/layout/sidebar";
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
 
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-      <main className="flex-1 lg:pl-64">
-        <div className="min-h-screen p-4 pt-16 lg:p-8 lg:pt-8">
-          {children}
-        </div>
-      </main>
-    </div>
-  );
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  const supabase = createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  if (profile?.role !== 'admin') redirect('/mi-cuenta')
+
+  return <>{children}</>
 }
